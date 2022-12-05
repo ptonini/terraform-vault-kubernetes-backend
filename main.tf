@@ -1,5 +1,6 @@
 module "user_certificate" {
-  source = "github.com/ptonini/terraform-kubernetes-user-certificate"
+  source = "ptonini/user-certificate/kubernetes"
+  version = "~> 1.0.0"
   name = var.user_certificate_name
   cluster_role_rules = [
     {
@@ -25,7 +26,8 @@ module "user_certificate" {
 }
 
 module "vault_mount"{
-  source = "github.com/ptonini/terraform-vault-mount"
+  source = "ptonini/mount/vault"
+  version = "~> 1.0.0"
   path = var.path
   type = var.type
 }
