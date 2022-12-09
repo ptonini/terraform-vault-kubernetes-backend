@@ -6,11 +6,9 @@ variable "type" {
 
 variable "host" {}
 
-variable "user_certificate_name" {
+variable "username" {
   default = "vault-secrets-backend"
 }
-
-variable "ca_cert" {}
 
 variable "default_ttl" {
   default = null
@@ -19,5 +17,3 @@ variable "default_ttl" {
 variable "max_ttl" {
   default = null
 }
-
-variable "vault_token" {}

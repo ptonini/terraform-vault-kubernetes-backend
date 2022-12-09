@@ -1,7 +1,8 @@
-module "user_certificate" {
-  source  = "ptonini/user-certificate/kubernetes"
-  version = "~> 1.0.0"
-  name    = var.user_certificate_name
+module "service_account" {
+  source    = "ptonini/service-account/kubernetes"
+  version   = "~> 1.1.0"
+  name      = var.username
+  namespace = "kube-system"
   cluster_role_rules = [
     {
       api_groups = ["rbac.authorization.k8s.io"]
@@ -39,18 +40,19 @@ resource "vault_generic_endpoint" "this" {
   disable_delete       = true
   data_json = jsonencode({
     host        = var.host
-    ca_cert     = var.ca_cert
-    client_cert = module.user_certificate.this.certificate
-    client_key  = module.user_certificate.private_key.private_key_pem
+    ca_cert     = module.service_account.ca_crt
+    token       = module.service_account.token
     default_ttl = var.default_ttl
     max_ttl     = var.max_ttl
   })
 }
 
-resource "null_resource" "rotate_role_password" {
-  provisioner "local-exec" {
-    command = "VAULT_TOKEN=${var.vault_token} vault write -force ${module.vault_mount.this.path}/rotate-root"
-  }
+resource "vault_generic_endpoint" "rotate_root" {
+  path                 = "${module.vault_mount.this.path}/rotate-root"
+  ignore_absent_fields = true
+  disable_read         = true
+  disable_delete       = true
+  data_json = "{}"
   depends_on = [
     vault_generic_endpoint.this
   ]
