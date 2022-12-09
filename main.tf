@@ -1,10 +1,5 @@
 locals {
-  cluster_role_rules = [
-    {
-      api_groups = ["rbac.authorization.k8s.io"]
-      resources  = ["roles", "clusterroles", "rolebindings", "clusterrolebindings"]
-      verbs      = ["*"]
-    },
+  certificate_rules = [
     {
       api_groups = ["certificates.k8s.io"]
       resources  = ["certificatesigningrequests", "certificatesigningrequests/approval"]
@@ -17,6 +12,24 @@ locals {
       verbs         = ["approve", "sign"]
     }
   ]
+  serviceaccount_rules = [
+    {
+      api_groups : [""]
+      resources : ["serviceaccounts", "secrets"]
+      verbs : ["*"]
+    }
+  ]
+  all_rules = concat(
+    [
+      {
+        api_groups = ["rbac.authorization.k8s.io"]
+        resources  = ["roles", "clusterroles", "rolebindings", "clusterrolebindings"]
+        verbs      = ["*"]
+      }
+    ],
+    var.certificate_generation ? local.certificate_rules : [],
+    var.serviceaccount_generation ? local.serviceaccount_rules : []
+  )
 }
 
 module "service_account" {
@@ -25,7 +38,7 @@ module "service_account" {
   count              = var.credentials == "service_account" ? 1 : 0
   name               = var.username
   namespace          = "kube-system"
-  cluster_role_rules = local.cluster_role_rules
+  cluster_role_rules = local.all_rules
   providers = {
     kubernetes = kubernetes
   }
@@ -36,7 +49,7 @@ module "certificate" {
   version            = "~> 1.0.0"
   count              = var.credentials == "certificate" ? 1 : 0
   name               = var.username
-  cluster_role_rules = local.cluster_role_rules
+  cluster_role_rules = local.all_rules
   providers = {
     kubernetes = kubernetes
   }
@@ -66,6 +79,7 @@ resource "vault_generic_endpoint" "this" {
 }
 
 resource "vault_generic_endpoint" "rotate_root" {
+  count                = var.rotate_root ? 1 : 0
   path                 = "${module.vault_mount.this.path}/rotate-root"
   ignore_absent_fields = true
   disable_read         = true

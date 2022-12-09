@@ -38,3 +38,15 @@ variable "default_ttl" {
 variable "max_ttl" {
   default = null
 }
+
+variable "rotate_root" {
+  default = false
+}
+
+variable "serviceaccount_generation" {
+  default = false
+}
+
+variable "certificate_generation" {
+  default = true
+}
