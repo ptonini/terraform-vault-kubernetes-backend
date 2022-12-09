@@ -1,8 +1,4 @@
-module "service_account" {
-  source    = "ptonini/service-account/kubernetes"
-  version   = "~> 1.1.0"
-  name      = var.username
-  namespace = "kube-system"
+locals {
   cluster_role_rules = [
     {
       api_groups = ["rbac.authorization.k8s.io"]
@@ -21,6 +17,26 @@ module "service_account" {
       verbs         = ["approve", "sign"]
     }
   ]
+}
+
+module "service_account" {
+  source             = "ptonini/service-account/kubernetes"
+  version            = "~> 1.1.0"
+  count              = var.credentials == "service_account" ? 1 : 0
+  name               = var.username
+  namespace          = "kube-system"
+  cluster_role_rules = local.cluster_role_rules
+  providers = {
+    kubernetes = kubernetes
+  }
+}
+
+module "certificate" {
+  source             = "ptonini/user-certificate/kubernetes"
+  version            = "~> 1.0.0"
+  count              = var.credentials == "certificate" ? 1 : 0
+  name               = var.username
+  cluster_role_rules = local.cluster_role_rules
   providers = {
     kubernetes = kubernetes
   }
@@ -40,8 +56,10 @@ resource "vault_generic_endpoint" "this" {
   disable_delete       = true
   data_json = jsonencode({
     host        = var.host
-    ca_cert     = module.service_account.ca_crt
-    token       = module.service_account.token
+    ca_cert     = try(module.service_account[0].ca_crt, var.ca_cert)
+    token       = try(module.service_account[0].token, var.token)
+    client_cert = try(module.certificate[0].this.certificate, var.client_cert)
+    client_key  = try(module.certificate[0].private_key.private_key_pem, var.client_key)
     default_ttl = var.default_ttl
     max_ttl     = var.max_ttl
   })
@@ -52,7 +70,7 @@ resource "vault_generic_endpoint" "rotate_root" {
   ignore_absent_fields = true
   disable_read         = true
   disable_delete       = true
-  data_json = "{}"
+  data_json            = "{}"
   depends_on = [
     vault_generic_endpoint.this
   ]
