@@ -12,7 +12,7 @@ variable "credentials" {
 }
 
 variable "username" {
-  default = "vault-secrets-backend"
+  default = "vault-backend"
 }
 
 variable "token" {
@@ -49,4 +49,8 @@ variable "serviceaccount_generation" {
 
 variable "certificate_generation" {
   default = true
+}
+
+variable "create_bindings" {
+  default = false
 }

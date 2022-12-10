@@ -34,11 +34,12 @@ locals {
 
 module "service_account" {
   source             = "ptonini/service-account/kubernetes"
-  version            = "~> 1.1.0"
+  version            = "~> 1.2.0"
   count              = var.credentials == "service_account" ? 1 : 0
   name               = var.username
   namespace          = "kube-system"
   cluster_role_rules = local.all_rules
+  create_bindings = var.create_bindings
   providers = {
     kubernetes = kubernetes
   }
@@ -46,10 +47,11 @@ module "service_account" {
 
 module "certificate" {
   source             = "ptonini/user-certificate/kubernetes"
-  version            = "~> 1.0.0"
+  version            = "~> 1.2.0"
   count              = var.credentials == "certificate" ? 1 : 0
   name               = var.username
   cluster_role_rules = local.all_rules
+  create_bindings = var.create_bindings
   providers = {
     kubernetes = kubernetes
   }
