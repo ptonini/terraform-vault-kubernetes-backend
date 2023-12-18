@@ -33,4 +33,5 @@ variable "roles" {
     extra_annotations = optional(map(string))
   }))
   default = {}
+  nullable = false
 }
