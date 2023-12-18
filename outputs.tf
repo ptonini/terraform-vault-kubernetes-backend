@@ -1,3 +1,3 @@
 output "this" {
-  value = module.vault_mount.this
+  value = vault_kubernetes_secret_backend.this
 }
